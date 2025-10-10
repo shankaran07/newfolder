@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html ng-app="serviceApp">
+  <head>
+    <meta charset="utf-8" />
+    <title>Service Tracker</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #f8f9fa;
+      }
+
+      h2,
+      h3 {
+        color: #007bff;
+      }
+
+      form,
+      table {
+        margin-bottom: 20px;
+
+        background-color: #ffffff;
+        padding: 15px;
+        border-radius: 4px;
+      }
+
+      input,
+      select,
+      button {
+        margin: 5px;
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #ced4da;
+      }
+
+      button {
+        cursor: pointer;
+        background-color: #28a745;
+        color: white;
+        border: none;
+      }
+
+      button[type="button"] {
+        background-color: #dc3545;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+      }
+
+      th {
+        text-align: left;
+        padding: 10px;
+        background-color: #e9ecef;
+      }
+    </style>
+    <script>
+      const app = angular.module("serviceApp", []);
+
+      app.controller("MainCtrl", function ($scope, $http) {
+        $scope.serviceList = [];
+        $scope.service = {};
+        $scope.editMode = false;
+        $scope.filterStatus = "";
+
+        const API_URL = "http://localhost:5000";
+
+        $scope.getService = function () {
+          $http.get(API_URL + "/list").then(function (res) {
+            $scope.serviceList = res.data;
+          });
+        };
+
+        $scope.saveService = function () {
+          if ($scope.editMode) {
+            $http
+              .put(API_URL + "/update/" + $scope.service._id, $scope.service)
+              .then(function () {
+                $scope.getService();
+                $scope.service = {};
+                $scope.editMode = false;
+              });
+          } else {
+            $http.post(API_URL + "/add", $scope.service).then(function () {
+              $scope.getService();
+              $scope.service = {};
+            });
+          }
+        };
+
+        $scope.editService = function (a) {
+          $scope.service = angular.copy(a);
+          $scope.editMode = true;
+        };
+
+        $scope.cancelEdit = function () {
+          $scope.service = {};
+          $scope.editMode = false;
+        };
+
+        $scope.deleteService = function (id) {
+          $http.delete(API_URL + "/delete/" + id).then(function () {
+            $scope.getService();
+          });
+        };
+
+        $scope.getService();
+      });
+    </script>
+  </head>
+
+  <body ng-controller="MainCtrl">
+    <h2>Service Tracker</h2>
+
+    <form ng-submit="saveService()">
+      <input ng-model="service.name" placeholder="Name" required />
+      <input ng-model="service.hello" placeholder="Service Name" required />
+      <input ng-model="service.phonenum" placeholder="phonenum" required />
+      <input ng-model="service.bloodgroup" placeholder="bloodgroup" required />
+      <input ng-model="service.district" placeholder="district" required />
+      <input type="date" ng-model="service.date" required />
+      <select ng-model="service.status" required>
+        <option value="Completed">Completed</option>
+        <option value="Incomplete">Incomplete</option>
+      </select>
+      <button>{{ editMode ? "Update" : "Add" }}</button>
+      <button type="button" ng-click="cancelEdit()" ng-if="editMode">
+        Cancel
+      </button>
+    </form>
+
+    <hr />
+
+    <label>Filter: </label>
+    <select ng-model="filterStatus">
+      <option value="">All</option>
+      <option value="Completed">Completed</option>
+      <option value="Incomplete">Incomplete</option>
+    </select>
+
+    <h3>Service List</h3>
+    <table cellpadding="8">
+      <tr>
+        <th>Name</th>
+        <th>Service Name</th>
+        <th>Phone Number</th>
+        <th>bloodgroup</th>
+        <th>district</th>
+        <th>Date</th>
+        <th>Status</th>
+
+        <th>Actions</th>
+      </tr>
+      <tr ng-repeat="a in serviceList | filter:{status: filterStatus}">
+        <td>{{a.name}}</td>
+        <td>{{a.hello}}</td>
+        <td>{{a.phonenum}}</td>
+        <td>{{a.bloodgroup}}</td>
+        <td>{{a.district}}</td>
+        <td>{{a.date | date:'yyyy-MM-dd'}}</td>
+        <td>{{a.status}}</td>
+        <td>
+          <button ng-click="editService(a)">Edit</button>
+          <button ng-click="deleteService(a._id)">Delete</button>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
